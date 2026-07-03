@@ -483,16 +483,8 @@ color_emoji = {"green": "🟢", "yellow": "🟡", "red": "🔴"}.get(actions['co
 st.sidebar.markdown(f"### {color_emoji} {actions['level']}")
 st.sidebar.metric(label="Skor Risiko Gabungan", value=f"{risk_score:.1f} / 100")
 
-# API Key input in sidebar
-st.sidebar.markdown("---")
-st.sidebar.subheader("🔑 Integrasi AI Gemini")
-api_key_input = st.sidebar.text_input(
-    "Gemini API Key",
-    type="password",
-    help="Masukkan API Key Gemini Anda. Jika dikosongkan, sistem akan otomatis menggunakan kunci API global yang aman dari server.",
-    value=""
-)
-api_key = api_key_input.strip() if api_key_input.strip() else os.environ.get("GEMINI_API_KEY", "")
+# API Key resolved from server secrets globally
+api_key = os.environ.get("GEMINI_API_KEY", "")
 
 # --- Title Header at the top of main dashboard ---
 st.title("🗻 SAR-Cast Penanggungan")
