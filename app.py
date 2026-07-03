@@ -489,8 +489,8 @@ st.sidebar.subheader("🔑 Integrasi AI Gemini")
 api_key_input = st.sidebar.text_input(
     "Gemini API Key",
     type="password",
-    help="Masukkan API Key Gemini Anda. Jika dikosongkan, sistem akan mencoba variabel lingkungan GEMINI_API_KEY, lalu fallback ke laporan lokal.",
-    value=os.environ.get("GEMINI_API_KEY", "")
+    help="Masukkan API Key Gemini Anda. Jika dikosongkan, sistem akan otomatis menggunakan kunci API global yang aman dari server.",
+    value=""
 )
 api_key = api_key_input.strip() if api_key_input.strip() else os.environ.get("GEMINI_API_KEY", "")
 
