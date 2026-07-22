@@ -45,7 +45,7 @@ def load_historical_data():
     df['week_start'] = pd.to_datetime(df['week_start'])
     return df
 
-def forecast_demand(df, steps=4):
+def forecast_demand(df, steps=52):
     # Combine search terms into an aggregate demand index (mean)
     keywords = ["pendakian penanggungan", "gunung penanggungan", "tiket penanggungan"]
     df['demand_index'] = df[keywords].mean(axis=1)
@@ -72,16 +72,32 @@ def forecast_demand(df, steps=4):
     })
     return df, forecast_df
 
-def plot_demand(df, forecast_df):
+def plot_demand(df, forecast_df, history_weeks=104):
+    if history_weeks and len(df) > history_weeks:
+        plot_hist_df = df.tail(history_weeks)
+    else:
+        plot_hist_df = df
+        
     fig = go.Figure()
-    fig.add_trace(go.Scatter(x=df['week_start'], y=df['demand_index'], name='Minat Historis', line=dict(color='deepskyblue')))
-    fig.add_trace(go.Scatter(x=forecast_df['week_start'], y=forecast_df['demand_forecast'], name='Ramalan (Forecast)', line=dict(color='orange', dash='dash')))
+    fig.add_trace(go.Scatter(
+        x=plot_hist_df['week_start'], 
+        y=plot_hist_df['demand_index'], 
+        name='Minat Historis', 
+        line=dict(color='deepskyblue', width=2)
+    ))
+    fig.add_trace(go.Scatter(
+        x=forecast_df['week_start'], 
+        y=forecast_df['demand_forecast'], 
+        name='Ramalan (Forecast)', 
+        line=dict(color='orange', width=2.5, dash='dash')
+    ))
     fig.update_layout(
         title="Proyeksi Minat Kunjungan Pendaki (Google Trends Index)", 
         xaxis_title="Tanggal", 
         yaxis_title="Indeks Kunjungan (0-100)", 
         template="plotly_dark",
-        margin=dict(l=40, r=40, t=40, b=40)
+        margin=dict(l=40, r=40, t=40, b=40),
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
     )
     st.plotly_chart(fig, use_container_width=True)
 
@@ -636,12 +652,30 @@ with tab1:
 # --- TAB 2: Forecast Kunjungan ---
 with tab2:
     st.markdown("### 📈 Proyeksi Minat Kunjungan Pendaki (Google Trends)")
-    st.write(f"Data historis termuat: **{df.shape[0]}** minggu.")
     
-    plot_demand(df, forecast_df)
+    f_col1, f_col2 = st.columns(2)
+    with f_col1:
+        history_option = st.selectbox(
+            "Tampilkan Rentang Historis:",
+            options=["2 Tahun Terakhir (104 Minggu)", "1 Tahun Terakhir (52 Minggu)", "Semua Data Historis (5 Tahun)"],
+            index=0
+        )
+    with f_col2:
+        forecast_option = st.selectbox(
+            "Jangkauan Ramalan (Horizon):",
+            options=["1 Tahun ke Depan / 52 Minggu (Pola Musiman)", "6 Bulan ke Depan (26 Minggu)", "1 Bulan ke Depan (4 Minggu)"],
+            index=0
+        )
+        
+    history_weeks = 104 if "2 Tahun" in history_option else (52 if "1 Tahun" in history_option else None)
+    steps = 52 if "1 Tahun" in forecast_option else (26 if "6 Bulan" in forecast_option else 4)
     
-    st.markdown("#### 📋 Tabel Proyeksi Kunjungan (4 Minggu ke Depan)")
-    formatted_forecast_df = forecast_df.copy()
+    _, current_forecast_df = forecast_demand(df, steps=steps)
+    
+    plot_demand(df, current_forecast_df, history_weeks=history_weeks)
+    
+    st.markdown(f"#### 📋 Tabel Proyeksi Kunjungan ({steps} Minggu ke Depan)")
+    formatted_forecast_df = current_forecast_df.copy()
     formatted_forecast_df['week_start'] = formatted_forecast_df['week_start'].dt.strftime('%Y-%m-%d')
     formatted_forecast_df.columns = ['Mulai Minggu (Tanggal)', 'Proyeksi Indeks Kunjungan (0-100)']
     st.dataframe(formatted_forecast_df, use_container_width=True)
